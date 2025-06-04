@@ -13,8 +13,6 @@ with st.expander("📝 Resumen Ejecutivo", expanded=True):
     st.markdown("""
     **Wild Brews** es una empresa costarricense fundada por tres hermanas de Pérez Zeledón, que presentan una propuesta innovadora al ofrecer té de kombucha artesanal gasificado.  
     Su propuesta se distingue por la innovación en sabores, el uso de ingredientes naturales y una presentación atractiva que invita al consumidor a probar sus interesantes sabores y participar de los beneficios que los tés de la marca brindan.
-
-    Ante las posibilidades de internacionalizarse a un nuevo mercado donde existe un nicho bien definido, como lo es el canadiense, se observa un entorno competitivo y dinámico.
     """)
 
 # Paleta de colores
