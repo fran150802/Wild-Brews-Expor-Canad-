@@ -16,15 +16,8 @@ data = {name: pd.read_excel(file_path, sheet_name=sheet) for name, sheet in shee
 # Título del dashboard
 st.title("Dashboard Interactivo - Wild Brews")
 
-# Selección de pestaña
-seleccion = st.sidebar.radio("Selecciona una sección:", list(data.keys()))
-df = data[seleccion]
+# Función para generar los gráficos
 
-# Mostrar tabla
-st.subheader(f"Datos: {seleccion}")
-st.dataframe(df.head(20))
-
-# Generar y mostrar gráfico
 def generar_grafico(nombre, df):
     if nombre == "Importaciones" and len(df.columns) > 1:
         return px.bar(df, x=df.columns[0], y=df.columns[1:], barmode="group",
@@ -44,9 +37,13 @@ def generar_grafico(nombre, df):
     else:
         return None
 
-figura = generar_grafico(seleccion, df)
-if figura:
-    st.plotly_chart(figura)
-else:
-    st.info("No hay datos suficientes para graficar.")
-
+# Mostrar todo el contenido en una sola página
+for nombre, df in data.items():
+    st.subheader(f"Datos: {nombre}")
+    st.dataframe(df.head(20))
+    figura = generar_grafico(nombre, df)
+    if figura:
+        st.plotly_chart(figura)
+    else:
+        st.info("No hay datos suficientes para graficar.")
+    st.markdown("---")
