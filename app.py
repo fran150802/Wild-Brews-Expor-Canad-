@@ -19,7 +19,6 @@ data = {name: pd.read_excel(file_path, sheet_name=sheet) for name, sheet in shee
 st.title("Dashboard Interactivo - Wild Brews")
 
 # Función para limpiar y detectar columnas numéricas
-
 def limpiar_datos(df):
     df = df.copy()
     df.columns = df.columns.str.strip()
@@ -34,7 +33,6 @@ def limpiar_datos(df):
     return df
 
 # Función para generar los gráficos
-
 def generar_grafico(nombre, df):
     if df.empty or len(df.columns) < 2:
         return None
@@ -51,6 +49,8 @@ def generar_grafico(nombre, df):
                       markers=True)
         fig.update_traces(mode="lines+markers", hovertemplate='%{y:$,.2f}')
         fig.update_yaxes(tickprefix="$", separatethousands=True)
+        return fig
+
     elif nombre == "Valoración del Mercado":
         df = limpiar_datos(df)
         if len(y_cols) == 0:
@@ -60,19 +60,19 @@ def generar_grafico(nombre, df):
                       markers=True)
         fig.update_traces(mode="lines+markers", hovertemplate='%{y:$,.2f}')
         fig.update_yaxes(tickprefix="$", separatethousands=True)
+        return fig
+
     elif nombre == "Volumen por Segmento":
-        # Imagen con seaborn
-        st.set_option('deprecation.showPyplotGlobalUse', False)
         fig, ax = plt.subplots(figsize=(10, 5))
         sns.countplot(data=df, x=df.columns[0], hue=df.columns[1], ax=ax)
         plt.title("Volumen proyectado de consumo por segmento")
         plt.xticks(rotation=45)
         st.pyplot(fig)
         return None
+
     elif nombre == "Competencia":
-        st.set_option('deprecation.showPyplotGlobalUse', False)
         cols = [col for col in df.columns if any(x in col.lower() for x in ['competidor', 'origen', 'precio'])]
-        if len(cols) < 2:
+        if len(cols) < 3:
             return None
         fig, ax = plt.subplots(figsize=(10, 6))
         sns.scatterplot(data=df, x=cols[1], y=cols[2], hue=cols[0], ax=ax)
@@ -81,16 +81,16 @@ def generar_grafico(nombre, df):
         plt.ylabel(cols[2])
         st.pyplot(fig)
         return None
+
     elif nombre == "Fidelización":
         df = limpiar_datos(df)
         if len(y_cols) == 0:
             return None
         fig = px.pie(df, names=x_col, values=y_cols[0],
                      title="Estrategias de fidelización")
-    else:
-        return None
+        return fig
 
-    return fig
+    return None
 
 # Mostrar todo el contenido en una sola página
 for nombre, df in data.items():
