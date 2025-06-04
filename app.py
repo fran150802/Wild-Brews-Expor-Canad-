@@ -67,8 +67,21 @@ def generar_grafico(nombre, df):
         st.markdown("### 📊 Volumen por Segmento (Gráfico de Burbujas)")
         df_burb = df.copy()
         df_burb.columns = df_burb.columns.str.strip()
-        df_burb["Tamaño"] = 30  # Asignar tamaño constante para mejor visibilidad
-        fig = px.scatter(df_burb, x=df_burb.columns[0], y=["Consumo" for _ in range(len(df_burb))],
+        df_burb = df_burb.dropna()
+
+        def escala_a_tamano(valor):
+            valor = str(valor).strip().lower()
+            if "bajo" in valor:
+                return 10
+            elif "medio" in valor:
+                return 30
+            elif "alto" in valor:
+                return 60
+            return 20
+
+        df_burb["Tamaño"] = df_burb.iloc[:, 1].apply(escala_a_tamano)
+
+        fig = px.scatter(df_burb, x=df_burb.columns[0], y=["" for _ in range(len(df_burb))],
                          size="Tamaño", color=df_burb.columns[1],
                          title="Volumen proyectado de consumo por segmento",
                          labels={df_burb.columns[0]: "Segmento", df_burb.columns[1]: "Consumo"},
@@ -79,10 +92,9 @@ def generar_grafico(nombre, df):
         st.markdown("### 🧩 Visualización de Competencia (Gráfico de Burbujas)")
         df_filtrado = df[[col for col in df.columns if col.lower() in ['competidor', 'origen', 'precio'] or any(x in col.lower() for x in ['competidor', 'origen', 'precio'])]].dropna()
 
-        # Corrección para GT's Kombucha
+        # Asegurar que GT's Kombucha esté clasificado como Medio
         df_filtrado.iloc[:, 2] = df_filtrado.iloc[:, 2].replace({"GT's Kombucha": "Medio"})
 
-        # Convertir los niveles de precio a tamaños de burbuja
         def precio_a_valor(p):
             p = str(p).strip().lower()
             if "bajo" in p:
@@ -95,7 +107,7 @@ def generar_grafico(nombre, df):
 
         df_filtrado["Tamaño"] = df_filtrado.iloc[:, 2].apply(precio_a_valor)
         fig = px.scatter(df_filtrado, x=df_filtrado.columns[0], y=df_filtrado.columns[1],
-                         size="Tamaño", color=df_filtrado.columns[2],
+                         size="Tamaño", color=df_filtrado.iloc[:, 2],
                          title="Competencia: Relación Competidor - Origen - Precio",
                          size_max=60)
         return fig
