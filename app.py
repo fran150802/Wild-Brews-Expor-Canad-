@@ -16,38 +16,51 @@ data = {name: pd.read_excel(file_path, sheet_name=sheet) for name, sheet in shee
 # Título del dashboard
 st.title("Dashboard Interactivo - Wild Brews")
 
+# Función para limpiar y detectar columnas numéricas
+
+def limpiar_datos(df):
+    df = df.copy()
+    df.columns = df.columns.str.strip()
+    df = df.loc[:, ~df.columns.str.contains('^Unnamed')]
+    df = df.dropna(how='all')
+    for col in df.columns[1:]:
+        df[col] = pd.to_numeric(df[col], errors='coerce')
+    df = df.dropna(subset=[df.columns[0]])
+    return df
+
 # Función para generar los gráficos
 
 def generar_grafico(nombre, df):
-    df = df.copy()
     if df.empty or len(df.columns) < 2:
         return None
 
     x_col = df.columns[0]
-    y_cols = df.columns[1:]
-
-    # Convertir columnas numéricas y filtrar valores válidos
-    for col in y_cols:
-        df[col] = pd.to_numeric(df[col], errors='coerce')
-
-    df = df.dropna(subset=[x_col] + list(y_cols))
-
-    if df.empty:
-        return None
+    y_cols = df.select_dtypes(include='number').columns
 
     if nombre == "Importaciones":
-        fig = px.scatter_matrix(df, dimensions=y_cols, color=x_col,
-                                title="Importaciones por conceptos de bebidas")
-    elif nombre == "Valoración del Mercado":
+        df = limpiar_datos(df)
+        if len(y_cols) == 0:
+            return None
         fig = px.scatter(df, x=x_col, y=y_cols[0],
-                         title="Valoración del mercado de kombucha")
+                         title="Importaciones por conceptos de bebidas (USD)")
+    elif nombre == "Valoración del Mercado":
+        df = limpiar_datos(df)
+        if len(y_cols) == 0:
+            return None
+        fig = px.scatter(df, x=x_col, y=y_cols[0],
+                         title="Valoración del mercado de kombucha (USD)")
     elif nombre == "Volumen por Segmento":
-        fig = px.bar(df, x=x_col, y=y_cols,
-                     barmode="group", title="Volumen proyectado de consumo por segmento")
+        # Usar un gráfico de barras con conteo por categoría
+        fig = px.bar(df, x=x_col, color=df.columns[1],
+                     title="Volumen proyectado de consumo por segmento (conteo de categorías)")
     elif nombre == "Competencia":
-        fig = px.treemap(df, path=[x_col], values=y_cols[0],
-                         title="Participación de competidores")
+        # Usar gráfico de barras para mostrar recuento por competidor
+        fig = px.bar(df, x=x_col, color=x_col,
+                     title="Participación de competidores (frecuencia de mención)")
     elif nombre == "Fidelización":
+        df = limpiar_datos(df)
+        if len(y_cols) == 0:
+            return None
         fig = px.pie(df, names=x_col, values=y_cols[0],
                      title="Estrategias de fidelización")
     else:
@@ -65,3 +78,4 @@ for nombre, df in data.items():
     else:
         st.info("No hay datos suficientes o válidos para graficar.")
     st.markdown("---")
+
