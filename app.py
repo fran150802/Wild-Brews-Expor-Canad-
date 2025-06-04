@@ -1,6 +1,8 @@
 import streamlit as st
 import pandas as pd
 import plotly.express as px
+import matplotlib.pyplot as plt
+import seaborn as sns
 
 # Cargar los datos
 file_path = "Excel de Wild Brews.xlsx"
@@ -24,6 +26,9 @@ def limpiar_datos(df):
     df = df.loc[:, ~df.columns.str.contains('^Unnamed')]
     df = df.dropna(how='all')
     for col in df.columns[1:]:
+        df[col] = (df[col].astype(str)
+                         .str.replace("$", "", regex=False)
+                         .str.replace(",", "", regex=False))
         df[col] = pd.to_numeric(df[col], errors='coerce')
     df = df.dropna(subset=[df.columns[0]])
     return df
@@ -41,22 +46,41 @@ def generar_grafico(nombre, df):
         df = limpiar_datos(df)
         if len(y_cols) == 0:
             return None
-        fig = px.scatter(df, x=x_col, y=y_cols[0],
-                         title="Importaciones por conceptos de bebidas (USD)")
+        fig = px.line(df, x=x_col, y=y_cols[0],
+                      title="Importaciones por conceptos de bebidas (USD)",
+                      markers=True)
+        fig.update_traces(mode="lines+markers", hovertemplate='%{y:$,.2f}')
+        fig.update_yaxes(tickprefix="$", separatethousands=True)
     elif nombre == "Valoración del Mercado":
         df = limpiar_datos(df)
         if len(y_cols) == 0:
             return None
-        fig = px.scatter(df, x=x_col, y=y_cols[0],
-                         title="Valoración del mercado de kombucha (USD)")
+        fig = px.line(df, x=x_col, y=y_cols[0],
+                      title="Valoración del mercado de kombucha (USD)",
+                      markers=True)
+        fig.update_traces(mode="lines+markers", hovertemplate='%{y:$,.2f}')
+        fig.update_yaxes(tickprefix="$", separatethousands=True)
     elif nombre == "Volumen por Segmento":
-        # Usar un gráfico de barras con conteo por categoría
-        fig = px.bar(df, x=x_col, color=df.columns[1],
-                     title="Volumen proyectado de consumo por segmento (conteo de categorías)")
+        # Imagen con seaborn
+        st.set_option('deprecation.showPyplotGlobalUse', False)
+        fig, ax = plt.subplots(figsize=(10, 5))
+        sns.countplot(data=df, x=df.columns[0], hue=df.columns[1], ax=ax)
+        plt.title("Volumen proyectado de consumo por segmento")
+        plt.xticks(rotation=45)
+        st.pyplot(fig)
+        return None
     elif nombre == "Competencia":
-        # Usar gráfico de barras para mostrar recuento por competidor
-        fig = px.bar(df, x=x_col, color=x_col,
-                     title="Participación de competidores (frecuencia de mención)")
+        st.set_option('deprecation.showPyplotGlobalUse', False)
+        cols = [col for col in df.columns if any(x in col.lower() for x in ['competidor', 'origen', 'precio'])]
+        if len(cols) < 2:
+            return None
+        fig, ax = plt.subplots(figsize=(10, 6))
+        sns.scatterplot(data=df, x=cols[1], y=cols[2], hue=cols[0], ax=ax)
+        plt.title("Análisis de Competencia por Origen y Precio")
+        plt.xlabel(cols[1])
+        plt.ylabel(cols[2])
+        st.pyplot(fig)
+        return None
     elif nombre == "Fidelización":
         df = limpiar_datos(df)
         if len(y_cols) == 0:
@@ -75,7 +99,4 @@ for nombre, df in data.items():
     figura = generar_grafico(nombre, df)
     if figura:
         st.plotly_chart(figura, use_container_width=True)
-    else:
-        st.info("No hay datos suficientes o válidos para graficar.")
     st.markdown("---")
-
