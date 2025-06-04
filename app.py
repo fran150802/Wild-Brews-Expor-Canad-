@@ -64,23 +64,33 @@ def generar_grafico(nombre, df):
 
     elif nombre == "Volumen por Segmento":
         fig, ax = plt.subplots(figsize=(10, 5))
-        sns.countplot(data=df, x=df.columns[0], hue=df.columns[1], ax=ax)
-        plt.title("Volumen proyectado de consumo por segmento")
-        plt.xticks(rotation=45)
+        sns.barplot(data=df, x=df.columns[0], y=df.columns[1], ax=ax, estimator=lambda x: len(x))
+        ax.set_title("Volumen proyectado de consumo por segmento")
+        ax.set_xticklabels(ax.get_xticklabels(), rotation=45)
         st.pyplot(fig)
         return None
 
     elif nombre == "Competencia":
-        cols = [col for col in df.columns if any(x in col.lower() for x in ['competidor', 'origen', 'precio'])]
-        if len(cols) < 3:
-            return None
-        fig, ax = plt.subplots(figsize=(10, 6))
-        sns.scatterplot(data=df, x=cols[1], y=cols[2], hue=cols[0], ax=ax)
-        plt.title("Análisis de Competencia por Origen y Precio")
-        plt.xlabel(cols[1])
-        plt.ylabel(cols[2])
-        st.pyplot(fig)
-        return None
+        st.markdown("### Visualización de Competencia (Gráfico de Burbujas)")
+        df_filtrado = df[[col for col in df.columns if col.lower() in ['competidor', 'origen', 'precio'] or any(x in col.lower() for x in ['competidor', 'origen', 'precio'])]].dropna()
+
+        # Convertir los niveles de precio a tamaños de burbuja
+        def precio_a_valor(p):
+            p = str(p).strip().lower()
+            if "bajo" in p:
+                return 10
+            elif "medio" in p:
+                return 30
+            elif "alto" in p:
+                return 60
+            return 20  # valor por defecto
+
+        df_filtrado["Tamaño"] = df_filtrado.iloc[:, 2].apply(precio_a_valor)
+        fig = px.scatter(df_filtrado, x=df_filtrado.columns[0], y=df_filtrado.columns[1],
+                         size="Tamaño", color=df_filtrado.columns[2],
+                         title="Competencia: Relación Competidor - Origen - Precio",
+                         size_max=60)
+        return fig
 
     elif nombre == "Fidelización":
         df = limpiar_datos(df)
