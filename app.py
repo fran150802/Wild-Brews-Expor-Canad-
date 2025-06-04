@@ -16,7 +16,8 @@ sheets = {
 data = {name: pd.read_excel(file_path, sheet_name=sheet) for name, sheet in sheets.items()}
 
 # Título del dashboard
-st.title("Dashboard Interactivo - Wild Brews")
+st.set_page_config(page_title="Wild Brews Dashboard", layout="wide")
+st.title("🍹 Dashboard Interactivo - Wild Brews")
 
 # Función para limpiar y detectar columnas numéricas
 def limpiar_datos(df):
@@ -45,7 +46,7 @@ def generar_grafico(nombre, df):
         if len(y_cols) == 0:
             return None
         fig = px.line(df, x=x_col, y=y_cols[0],
-                      title="Importaciones por conceptos de bebidas (USD)",
+                      title="📈 Importaciones por conceptos de bebidas (USD)",
                       markers=True)
         fig.update_traces(mode="lines+markers", hovertemplate='%{y:$,.2f}')
         fig.update_yaxes(tickprefix="$", separatethousands=True)
@@ -56,23 +57,30 @@ def generar_grafico(nombre, df):
         if len(y_cols) == 0:
             return None
         fig = px.line(df, x=x_col, y=y_cols[0],
-                      title="Valoración del mercado de kombucha (USD)",
+                      title="📈 Valoración del mercado de kombucha (USD)",
                       markers=True)
         fig.update_traces(mode="lines+markers", hovertemplate='%{y:$,.2f}')
         fig.update_yaxes(tickprefix="$", separatethousands=True)
         return fig
 
     elif nombre == "Volumen por Segmento":
-        fig, ax = plt.subplots(figsize=(10, 5))
-        sns.barplot(data=df, x=df.columns[0], y=df.columns[1], ax=ax, estimator=lambda x: len(x))
-        ax.set_title("Volumen proyectado de consumo por segmento")
-        ax.set_xticklabels(ax.get_xticklabels(), rotation=45)
-        st.pyplot(fig)
-        return None
+        st.markdown("### 📊 Volumen por Segmento (Gráfico de Burbujas)")
+        df_burb = df.copy()
+        df_burb.columns = df_burb.columns.str.strip()
+        df_burb["Tamaño"] = 30  # Asignar tamaño constante para mejor visibilidad
+        fig = px.scatter(df_burb, x=df_burb.columns[0], y=["Consumo" for _ in range(len(df_burb))],
+                         size="Tamaño", color=df_burb.columns[1],
+                         title="Volumen proyectado de consumo por segmento",
+                         labels={df_burb.columns[0]: "Segmento", df_burb.columns[1]: "Consumo"},
+                         size_max=60)
+        return fig
 
     elif nombre == "Competencia":
-        st.markdown("### Visualización de Competencia (Gráfico de Burbujas)")
+        st.markdown("### 🧩 Visualización de Competencia (Gráfico de Burbujas)")
         df_filtrado = df[[col for col in df.columns if col.lower() in ['competidor', 'origen', 'precio'] or any(x in col.lower() for x in ['competidor', 'origen', 'precio'])]].dropna()
+
+        # Corrección para GT's Kombucha
+        df_filtrado.iloc[:, 2] = df_filtrado.iloc[:, 2].replace({"GT's Kombucha": "Medio"})
 
         # Convertir los niveles de precio a tamaños de burbuja
         def precio_a_valor(p):
@@ -83,7 +91,7 @@ def generar_grafico(nombre, df):
                 return 30
             elif "alto" in p:
                 return 60
-            return 20  # valor por defecto
+            return 20
 
         df_filtrado["Tamaño"] = df_filtrado.iloc[:, 2].apply(precio_a_valor)
         fig = px.scatter(df_filtrado, x=df_filtrado.columns[0], y=df_filtrado.columns[1],
@@ -97,16 +105,17 @@ def generar_grafico(nombre, df):
         if len(y_cols) == 0:
             return None
         fig = px.pie(df, names=x_col, values=y_cols[0],
-                     title="Estrategias de fidelización")
+                     title="🎯 Estrategias de fidelización")
         return fig
 
     return None
 
-# Mostrar todo el contenido en una sola página
-for nombre, df in data.items():
-    st.subheader(f"Datos: {nombre}")
-    st.dataframe(df.head(20))
-    figura = generar_grafico(nombre, df)
-    if figura:
-        st.plotly_chart(figura, use_container_width=True)
-    st.markdown("---")
+# Mostrar todo el contenido en una sola página con interactividad
+with st.expander("Mostrar todos los análisis", expanded=True):
+    for nombre, df in data.items():
+        st.subheader(f"📑 Datos: {nombre}")
+        st.dataframe(df.head(20))
+        figura = generar_grafico(nombre, df)
+        if figura:
+            st.plotly_chart(figura, use_container_width=True)
+        st.markdown("---")
