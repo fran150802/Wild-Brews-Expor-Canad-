@@ -8,6 +8,15 @@ import seaborn as sns
 st.set_page_config(page_title="Wild Brews Dashboard", layout="wide")
 st.title("🍹 Dashboard Interactivo - Wild Brews")
 
+# Resumen Ejecutivo
+with st.expander("📝 Resumen Ejecutivo", expanded=True):
+    st.markdown("""
+    **Wild Brews** es una empresa costarricense fundada por tres hermanas de Pérez Zeledón, que presentan una propuesta innovadora al ofrecer té de kombucha artesanal gasificado.  
+    Su propuesta se distingue por la innovación en sabores, el uso de ingredientes naturales y una presentación atractiva que invita al consumidor a probar sus interesantes sabores y participar de los beneficios que los tés de la marca brindan.
+
+    Ante las posibilidades de internacionalizarse a un nuevo mercado donde existe un nicho bien definido, como lo es el canadiense, se observa un entorno competitivo y dinámico.
+    """)
+
 # Paleta de colores
 colores = px.colors.sequential.Tealgrn
 
@@ -132,7 +141,8 @@ def generar_grafico(nombre, df):
             return None
         fig = px.pie(df, names=x_col, values=y_cols[0],
                      title="🎯 Estrategias de fidelización")
-        fig.update_traces(textposition='inside', textinfo='percent+label')
+        fig.update_traces(textposition='inside', textinfo='percent')
+        fig.update_layout(title_x=0.5)
         return fig
 
     return None
