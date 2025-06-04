@@ -47,7 +47,7 @@ def generar_grafico(nombre, df):
             return None
         fig = px.line(df, x=x_col, y=y_cols[0],
                       title="📈 Importaciones por conceptos de bebidas (USD)",
-                      markers=True)
+                      markers=True, animation_frame=x_col)
         fig.update_traces(mode="lines+markers", hovertemplate='%{y:$,.2f}')
         fig.update_yaxes(tickprefix="$", separatethousands=True)
         return fig
@@ -58,7 +58,7 @@ def generar_grafico(nombre, df):
             return None
         fig = px.line(df, x=x_col, y=y_cols[0],
                       title="📈 Valoración del mercado de kombucha (USD)",
-                      markers=True)
+                      markers=True, animation_frame=x_col)
         fig.update_traces(mode="lines+markers", hovertemplate='%{y:$,.2f}')
         fig.update_yaxes(tickprefix="$", separatethousands=True)
         return fig
@@ -72,12 +72,12 @@ def generar_grafico(nombre, df):
         def escala_a_tamano(valor):
             valor = str(valor).strip().lower()
             if "bajo" in valor:
-                return 10
+                return 20
             elif "medio" in valor:
-                return 30
-            elif "alto" in valor:
                 return 60
-            return 20
+            elif "alto" in valor:
+                return 120
+            return 40
 
         df_burb["Tamaño"] = df_burb.iloc[:, 1].apply(escala_a_tamano)
 
@@ -85,31 +85,30 @@ def generar_grafico(nombre, df):
                          size="Tamaño", color=df_burb.columns[1],
                          title="Volumen proyectado de consumo por segmento",
                          labels={df_burb.columns[0]: "Segmento", df_burb.columns[1]: "Consumo"},
-                         size_max=60)
+                         size_max=120, animation_frame=df_burb.columns[0])
         return fig
 
     elif nombre == "Competencia":
         st.markdown("### 🧩 Visualización de Competencia (Gráfico de Burbujas)")
         df_filtrado = df[[col for col in df.columns if col.lower() in ['competidor', 'origen', 'precio'] or any(x in col.lower() for x in ['competidor', 'origen', 'precio'])]].dropna()
 
-        # Asegurar que GT's Kombucha esté clasificado como Medio
         df_filtrado.iloc[:, 2] = df_filtrado.iloc[:, 2].replace({"GT's Kombucha": "Medio"})
 
         def precio_a_valor(p):
             p = str(p).strip().lower()
             if "bajo" in p:
-                return 10
+                return 20
             elif "medio" in p:
-                return 30
-            elif "alto" in p:
                 return 60
-            return 20
+            elif "alto" in p:
+                return 120
+            return 40
 
         df_filtrado["Tamaño"] = df_filtrado.iloc[:, 2].apply(precio_a_valor)
         fig = px.scatter(df_filtrado, x=df_filtrado.columns[0], y=df_filtrado.columns[1],
                          size="Tamaño", color=df_filtrado.iloc[:, 2],
                          title="Competencia: Relación Competidor - Origen - Precio",
-                         size_max=60)
+                         size_max=120, animation_frame=df_filtrado.columns[0])
         return fig
 
     elif nombre == "Fidelización":
