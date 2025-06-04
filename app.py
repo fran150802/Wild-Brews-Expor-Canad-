@@ -19,20 +19,32 @@ st.title("Dashboard Interactivo - Wild Brews")
 # Función para generar los gráficos
 
 def generar_grafico(nombre, df):
-    if nombre == "Importaciones" and len(df.columns) > 1:
-        return px.bar(df, x=df.columns[0], y=df.columns[1:], barmode="group",
-                      title="Importaciones por conceptos de bebidas")
-    elif nombre == "Valoración del Mercado" and len(df.columns) > 1:
-        return px.line(df, x=df.columns[0], y=df.columns[1:],
+    df = df.dropna()  # eliminar filas con valores nulos
+    if df.empty or len(df.columns) < 2:
+        return None
+
+    x_col = df.columns[0]
+    y_cols = df.columns[1:]
+
+    # Intentar convertir todas las columnas Y a numérico (ignorando errores)
+    for col in y_cols:
+        df[col] = pd.to_numeric(df[col], errors='coerce')
+    df = df.dropna()  # eliminar filas con datos no convertibles
+
+    if nombre == "Importaciones":
+        return px.bar(df, x=x_col, y=df.select_dtypes(include='number').columns,
+                      barmode="group", title="Importaciones por conceptos de bebidas")
+    elif nombre == "Valoración del Mercado":
+        return px.line(df, x=x_col, y=df.select_dtypes(include='number').columns,
                        title="Valoración del mercado de kombucha")
-    elif nombre == "Volumen por Segmento" and len(df.columns) > 1:
-        return px.area(df, x=df.columns[0], y=df.columns[1:],
+    elif nombre == "Volumen por Segmento":
+        return px.area(df, x=x_col, y=df.select_dtypes(include='number').columns,
                        title="Volumen proyectado de consumo por segmento")
-    elif nombre == "Competencia" and len(df.columns) >= 2:
-        return px.bar(df, x=df.columns[0], y=df.columns[1],
+    elif nombre == "Competencia" and df.dtypes[1] in ['int64', 'float64']:
+        return px.bar(df, x=x_col, y=df.columns[1],
                       title="Análisis de competidores")
-    elif nombre == "Fidelización" and len(df.columns) >= 2:
-        return px.pie(df, names=df.columns[0], values=df.columns[1],
+    elif nombre == "Fidelización" and df.dtypes[1] in ['int64', 'float64']:
+        return px.pie(df, names=x_col, values=df.columns[1],
                       title="Estrategias de fidelización")
     else:
         return None
