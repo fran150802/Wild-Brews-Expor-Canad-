@@ -32,17 +32,17 @@ def generar_grafico(nombre, df):
     df = df.dropna()  # eliminar filas con datos no convertibles
 
     if nombre == "Importaciones":
-        return px.bar(df, x=x_col, y=df.select_dtypes(include='number').columns,
-                      barmode="group", title="Importaciones por conceptos de bebidas")
+        return px.scatter(df, x=x_col, y=df.select_dtypes(include='number').columns,
+                          title="Importaciones por conceptos de bebidas")
     elif nombre == "Valoración del Mercado":
-        return px.line(df, x=x_col, y=df.select_dtypes(include='number').columns,
-                       title="Valoración del mercado de kombucha")
+        return px.scatter(df, x=x_col, y=df.select_dtypes(include='number').columns,
+                          title="Valoración del mercado de kombucha")
     elif nombre == "Volumen por Segmento":
-        return px.area(df, x=x_col, y=df.select_dtypes(include='number').columns,
-                       title="Volumen proyectado de consumo por segmento")
+        return px.bar(df, x=x_col, y=df.select_dtypes(include='number').columns,
+                      barmode="group", title="Volumen proyectado de consumo por segmento")
     elif nombre == "Competencia" and df.dtypes[1] in ['int64', 'float64']:
-        return px.bar(df, x=x_col, y=df.columns[1],
-                      title="Análisis de competidores")
+        return px.funnel(df, x=df.columns[1], y=x_col,
+                         title="Embudo de participación de competidores")
     elif nombre == "Fidelización" and df.dtypes[1] in ['int64', 'float64']:
         return px.pie(df, names=x_col, values=df.columns[1],
                       title="Estrategias de fidelización")
