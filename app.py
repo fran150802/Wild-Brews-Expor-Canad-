@@ -4,6 +4,13 @@ import plotly.express as px
 import matplotlib.pyplot as plt
 import seaborn as sns
 
+# Configuración inicial
+st.set_page_config(page_title="Wild Brews Dashboard", layout="wide")
+st.title("🍹 Dashboard Interactivo - Wild Brews")
+
+# Paleta de colores
+colores = px.colors.sequential.Tealgrn
+
 # Cargar los datos
 file_path = "Excel de Wild Brews.xlsx"
 sheets = {
@@ -15,11 +22,7 @@ sheets = {
 }
 data = {name: pd.read_excel(file_path, sheet_name=sheet) for name, sheet in sheets.items()}
 
-# Título del dashboard
-st.set_page_config(page_title="Wild Brews Dashboard", layout="wide")
-st.title("🍹 Dashboard Interactivo - Wild Brews")
-
-# Función para limpiar y detectar columnas numéricas
+# Limpieza de datos
 def limpiar_datos(df):
     df = df.copy()
     df.columns = df.columns.str.strip()
@@ -33,7 +36,21 @@ def limpiar_datos(df):
     df = df.dropna(subset=[df.columns[0]])
     return df
 
-# Función para generar los gráficos
+# Estilo para gráficos
+def aplicar_estilo(fig, is_money=False):
+    fig.update_layout(
+        title_font=dict(size=20, family="Arial", color="darkslategray"),
+        font=dict(size=14),
+        plot_bgcolor="white",
+        paper_bgcolor="white",
+        colorway=colores
+    )
+    fig.update_xaxes(showgrid=True, gridcolor='lightgrey', zeroline=False)
+    fig.update_yaxes(showgrid=True, gridcolor='lightgrey', zeroline=False)
+    fig.update_traces(hovertemplate='%{x}<br>%{y:$,.2f}' if is_money else '%{x}<br>%{y}')
+    return fig
+
+# Generación de gráficos
 def generar_grafico(nombre, df):
     if df.empty or len(df.columns) < 2:
         return None
@@ -47,10 +64,9 @@ def generar_grafico(nombre, df):
             return None
         fig = px.line(df, x=x_col, y=y_cols[0],
                       title="📈 Importaciones por conceptos de bebidas (USD)",
-                      markers=True, animation_frame=x_col)
-        fig.update_traces(mode="lines+markers", hovertemplate='%{y:$,.2f}')
+                      markers=True)
         fig.update_yaxes(tickprefix="$", separatethousands=True)
-        return fig
+        return aplicar_estilo(fig, is_money=True)
 
     elif nombre == "Valoración del Mercado":
         df = limpiar_datos(df)
@@ -58,13 +74,11 @@ def generar_grafico(nombre, df):
             return None
         fig = px.line(df, x=x_col, y=y_cols[0],
                       title="📈 Valoración del mercado de kombucha (USD)",
-                      markers=True, animation_frame=x_col)
-        fig.update_traces(mode="lines+markers", hovertemplate='%{y:$,.2f}')
+                      markers=True)
         fig.update_yaxes(tickprefix="$", separatethousands=True)
-        return fig
+        return aplicar_estilo(fig, is_money=True)
 
     elif nombre == "Volumen por Segmento":
-        st.markdown("### 📊 Volumen por Segmento (Gráfico de Burbujas)")
         df_burb = df.copy()
         df_burb.columns = df_burb.columns.str.strip()
         df_burb = df_burb.dropna()
@@ -85,13 +99,11 @@ def generar_grafico(nombre, df):
                          size="Tamaño", color=df_burb.columns[1],
                          title="Volumen proyectado de consumo por segmento",
                          labels={df_burb.columns[0]: "Segmento", df_burb.columns[1]: "Consumo"},
-                         size_max=120, animation_frame=df_burb.columns[0])
-        return fig
+                         size_max=120)
+        return aplicar_estilo(fig)
 
     elif nombre == "Competencia":
-        st.markdown("### 🧩 Visualización de Competencia (Gráfico de Burbujas)")
         df_filtrado = df[[col for col in df.columns if col.lower() in ['competidor', 'origen', 'precio'] or any(x in col.lower() for x in ['competidor', 'origen', 'precio'])]].dropna()
-
         df_filtrado.iloc[:, 2] = df_filtrado.iloc[:, 2].replace({"GT's Kombucha": "Medio"})
 
         def precio_a_valor(p):
@@ -108,25 +120,28 @@ def generar_grafico(nombre, df):
         fig = px.scatter(df_filtrado, x=df_filtrado.columns[0], y=df_filtrado.columns[1],
                          size="Tamaño", color=df_filtrado.iloc[:, 2],
                          title="Competencia: Relación Competidor - Origen - Precio",
-                         size_max=120, animation_frame=df_filtrado.columns[0])
-        return fig
+                         size_max=120)
+        return aplicar_estilo(fig)
 
     elif nombre == "Fidelización":
         df = limpiar_datos(df)
         if len(y_cols) == 0:
             return None
         fig = px.pie(df, names=x_col, values=y_cols[0],
-                     title="🎯 Estrategias de fidelización")
+                     title="🎯 Estrategias de fidelización",
+                     color_discrete_sequence=colores)
+        fig.update_traces(textposition='inside', textinfo='percent+label')
         return fig
 
     return None
 
-# Mostrar todo el contenido en una sola página con interactividad
-with st.expander("Mostrar todos los análisis", expanded=True):
-    for nombre, df in data.items():
+# Tabs por cada sección
+tabs = st.tabs(list(data.keys()))
+
+for i, nombre in enumerate(data.keys()):
+    with tabs[i]:
         st.subheader(f"📑 Datos: {nombre}")
-        st.dataframe(df.head(20))
-        figura = generar_grafico(nombre, df)
+        st.dataframe(data[nombre].head(20))
+        figura = generar_grafico(nombre, data[nombre])
         if figura:
             st.plotly_chart(figura, use_container_width=True)
-        st.markdown("---")
