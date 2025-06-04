@@ -49,3 +49,4 @@ if figura:
     st.plotly_chart(figura)
 else:
     st.info("No hay datos suficientes para graficar.")
+
